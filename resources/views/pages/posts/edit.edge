@@ -1,0 +1,40 @@
+@layout('layouts/master')
+@section('content')
+<h2>Edit post of {{ post.title }}</h2>
+<a href="{{ route('posts.index') }}" class="btn btn-primary">Back</a>
+{{--  {{ inspect(post.category) }}  --}}
+@if(flashMessages.get('success'))
+<div class="alert alert-success mt-3" role="alert">
+    {{flashMessages.get('success')}}
+</div>
+@end
+<form class="mt-4" action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data">
+    {{ csrfField() }}
+    <div class="form-group">
+        <label>Title*</label>
+        <input type="text" value="{{ flashMessages.get('errors.oldValue.title') ? flashMessages.get('errors.oldValue.title') : post.title }}" name="title" class="form-control {{ flashMessages.get('errors.messages.title') && 'is-invalid' }}">
+    </div>
+    <div class="form-group">
+        <label>Image*</label>
+        <input type="file" name="image" class="form-control {{ flashMessages.get('errors.messages.image') && 'is-invalid' }}">
+        <img src="{{post.image}}" alt="{{post.image}}" width="200" class="mt-3 rounded shadow"/>
+    </div>
+    <div class="form-group">
+        <label>Description*</label>
+        <input type="text" value="{{ flashMessages.get('errors.oldValue.description') ? flashMessages.get('errors.oldValue.description') : post.description }}" name="description" class="form-control {{ flashMessages.get('errors.messages.description') && 'is-invalid' }}">
+    </div>
+    <div class="form-group">
+        <label>Content*</label>
+        <textarea name="content" class="form-control {{ flashMessages.get('errors.messages.content') && 'is-invalid' }}">{{ flashMessages.get('errors.oldValue.content') ? flashMessages.get('errors.oldValue.content') : post.content }}</textarea>
+    </div>
+    <div class="form-group">
+        <label>Category*</label>
+        <select name="category" class="form-control">
+            @each(category in categories)
+                <option value="{{category.id}}" {{post.category.id === category.id ? 'selected' : null}}>{{category.category}}</option>
+            @end
+        </select>
+    </div>
+    <input type="submit" value="Submit" class="btn btn-primary">
+</form>
+@end

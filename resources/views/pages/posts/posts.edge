@@ -1,0 +1,48 @@
+@layout('layouts/master')
+@section('content')
+<h2>List of all posts</h2>
+<a href="{{ route('posts.create') }}" class="btn btn-primary">Add Posts</a>
+@if(flashMessages.get('success'))
+<div class="alert alert-success mt-3" role="alert">
+    {{flashMessages.get('success')}}
+</div>
+@end
+<div class="table-responsive mt-3">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Slug</th>
+                <th>Image</th>
+                <th>Description</th>
+                <th>Content</th>
+                <th>Category</th>
+                <th>Author</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @each(post in posts)
+            <tr>
+                <td>{{post.title}}</td>
+                <td>{{post.slug}}</td>
+                <td>
+                    <img src="{{ post.image }}" alt="{{ post.image }}" width="100" height="100">
+                </td>
+                <td>{{post.description}}</td>
+                <td>{{post.content}}</td>
+                <td>{{post.category.category}}</td>
+                <td>{{post.user.name}}</td>
+                <td>
+                    <form action="{{ route('posts.destroy', { id: post.id }) }}?_method=delete" method="post">
+                        {{ csrfField() }}
+                        <a href="{{route('posts.edit', { id: post.id })}}" class="btn btn-primary btn-sm">Edit</a>
+                        <button class="btn btn-danger btn-sm" type="submit" onclick="return confirm('Are you sure want to delete this ?')">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            @end
+        </tbody>
+    </table>
+</div>
+@end
