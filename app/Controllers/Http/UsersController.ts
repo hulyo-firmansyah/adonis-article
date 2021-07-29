@@ -3,6 +3,34 @@ import Application from '@ioc:Adonis/Core/Application'
 import User from 'App/Models/User'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
 
+const postSchema = (id:Number = 0) => schema.create({
+  name: schema.string({}, [
+    rules.minLength(3)
+  ]),
+  username: schema.string({ trim: true }, [
+    rules.required(),
+    rules.minLength(3),
+    rules.unique({
+      table: 'users',
+      column: 'username',
+      whereNot: {
+        id: id > 0 ? id : null
+      } 
+    })
+  ]),
+  password: schema.string({ trim: true }, [
+    rules.required(),
+    rules.minLength(3),
+    rules.regex(/[A-Z0-9]/)
+  ]),
+  gender: schema.enum(['m', 'f'], [
+    rules.required()
+  ]),
+  address: schema.string({ trim: true }, [
+    rules.required()
+  ])
+})
+
 export default class UsersController {
   public async index({ view }: HttpContextContract) {
     const users: Array<User> = await User.all()
@@ -18,29 +46,9 @@ export default class UsersController {
     })
   }
 
-  public async store({ request, response, session, view }: HttpContextContract) {
-    const postSchema = schema.create({
-      name: schema.string({}, [
-        rules.minLength(3)
-      ]),
-      username: schema.string({ trim: true }, [
-        rules.required()
-      ]),
-      password: schema.string({ trim: true }, [
-        rules.minLength(3),
-        rules.required(),
-        rules.regex(/[A-Z0-9]/)
-      ]),
-      gender: schema.enum(['m', 'f'], [
-        rules.required()
-      ]),
-      address: schema.string({ trim: true }, [
-        rules.required()
-      ])
-    })
-    // return await view.renderRaw('<html><body>{{inspect(request.all())}}</body></html>', { request })
+  public async store({ request, response, session }: HttpContextContract) {
     try {
-      await request.validate({ schema: postSchema })
+      await request.validate({ schema: postSchema() })
     } catch ({ messages }) {
       const responses: { messages: Object, oldValue: Object } = {
         messages,
@@ -60,21 +68,41 @@ export default class UsersController {
     return response.redirect().toRoute('users.create')
   }
 
-  public async show({ params, view, response }: HttpContextContract) {
+  public async show({}: HttpContextContract) {
+  }
+
+  public async edit({ params, view, response }: HttpContextContract) {
     try {
       const user: User = await User.findOrFail(params.id)
 
+      return await view.render('pages/users/edit', { user })
+      // return await view.renderRaw('<html><body>{{inspect(user)}}</body></html>', { user })
     } catch (err) {
       return response.abort('not found', 404)
-      return await view.renderRaw('<html><body>{{inspect(params)}} {{inspect(err)}}</body></html>', { err, params })
     }
-
   }
 
-  public async edit({ }: HttpContextContract) {
-  }
+  public async update({ request, params, session, response }: HttpContextContract) {
+    try{
+      await request.validate({ schema: postSchema(params.id) })
 
-  public async update({ }: HttpContextContract) {
+      const user: User = await User.findOrFail(params.id)
+      await user.merge(request.only(['name', 'username', 'password', 'gender', 'address'])).save()
+
+      if (user?.$isPersisted) {
+        session.flash('success', 'Edit data successfully')
+        return response.redirect().toRoute('users.edit', { id : params.id })
+      }
+      session.flash('error', 'Edit data failed')
+      return response.redirect().toRoute('users.edit', { id : params.id })
+    }catch({ messages }){
+      const responses: { messages: Object, oldValue: Object } = {
+        messages,
+        oldValue: request.all()
+      }
+      session.flash('errors', responses)
+      return response.redirect().toRoute('users.edit', {id: params.id})
+    }
   }
 
   public async destroy({ params, response, session }: HttpContextContract) {
