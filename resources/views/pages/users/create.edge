@@ -1,0 +1,43 @@
+@layout('layouts/master')
+@section('content')
+<h2>List of all users</h2>
+<a href="{{ route('users.index') }}" class="btn btn-primary">Back</a>
+{{--  {{ inspect(flashMessages.all()) }}  --}}
+@if(flashMessages.get('success'))
+<div class="alert alert-success mt-3" role="alert">
+    {{flashMessages.get('success')}}
+</div>
+@end
+<form class="mt-4" action="{{ route('users.store') }}" method="POST">
+    {{ csrfField() }}
+    <div class="form-group">
+        <label>Name*</label>
+        <input type="text" value="{{ flashMessages.get('errors.oldValue.name') ? flashMessages.get('errors.oldValue.name') : '' }}" name="name" id="" class="form-control {{ flashMessages.get('errors.messages.name') && 'is-invalid' }}">
+    </div>
+    <div class="form-group">
+        <label>Username*</label>
+        <input type="text" value="{{ flashMessages.get('errors.oldValue.username') ? flashMessages.get('errors.oldValue.username') : '' }}" name="username" id="" class="form-control {{ flashMessages.get('errors.messages.username') && 'is-invalid' }}">
+    </div>
+    <div class="form-group">
+        <label>Password*</label>
+        <input type="password" value="{{ flashMessages.get('errors.oldValue.password') ? flashMessages.get('errors.oldValue.password') : '' }}" name="password" id="" class="form-control {{ flashMessages.get('errors.messages.password') && 'is-invalid' }}">
+    </div>
+    <div class="form-group">
+        <label>Gender*</label>
+        <div class="w-100"></div>
+        <div class="custom-control custom-radio custom-control-inline">
+            <input type="radio" id="customRadioInline1" name="gender" value="m"class="custom-control-input {{ flashMessages.get('errors.messages.gender') && 'is-invalid' }}">
+            <label class="custom-control-label" for="customRadioInline1">Male</label>
+          </div>
+        <div class="custom-control custom-radio custom-control-inline">
+            <input type="radio" id="customRadioInline2" name="gender" value="f"class="custom-control-input {{ flashMessages.get('errors.messages.gender') && 'is-invalid' }}">
+            <label class="custom-control-label" for="customRadioInline2">Female</label>
+        </div>
+    </div>
+    <div class="form-group">
+        <label>Address*</label>
+        <textarea name="address" class="form-control {{ flashMessages.get('errors.messages.address') && 'is-invalid' }}">{{ flashMessages.get('errors.oldValue.address') ? flashMessages.get('errors.oldValue.address') : '' }}</textarea>
+    </div>
+    <input type="submit" value="Submit" class="btn btn-primary">
+</form>
+@end
