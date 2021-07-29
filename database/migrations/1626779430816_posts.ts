@@ -9,6 +9,7 @@ export default class Posts extends BaseSchema {
 
       table.string('title', 75)
       table.string('slug', 255)
+      table.string('image', 255)
       table.string('description', 255)
       table.text('content')
       table.integer('category_id', 11).unsigned()
