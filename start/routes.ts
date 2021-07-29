@@ -19,17 +19,11 @@
 */
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Route from '@ioc:Adonis/Core/Route'
-
-import PostsController from 'App/Controllers/Http/PostsController'
 import UsersController from 'App/Controllers/Http/UsersController'
 
 Route.get('/', async ({ view }) => {
   return view.render('welcome')
 }).as('home')
-
-Route.get('/posts', async ctx => {
-  return new PostsController().index(ctx)
-})
 
 Route.group(() => {
   Route.get('/', async (ctx: HttpContextContract) => {
@@ -56,3 +50,5 @@ Route.group(() => {
     return new UsersController().destroy(ctx)
   }).as('users.delete')
 }).prefix('users')
+
+Route.resource('posts', 'PostsController')
