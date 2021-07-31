@@ -1,39 +1,45 @@
 import Application from '@ioc:Adonis/Core/Application'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { schema, rules } from '@ioc:Adonis/Core/Validator'
+import { schema, TypedSchema, rules } from '@ioc:Adonis/Core/Validator'
 import { cuid } from '@ioc:Adonis/Core/Helpers'
 import slugify from 'slugify'
 import Post from 'App/Models/Post'
 import Category from 'App/Models/Category'
 
-const postSchema = schema.create({
-  title: schema.string({ trim: true }, [
-    rules.required(),
-    rules.minLength(5),
-    rules.maxLength(255),
-    rules.unique({
-      table: 'posts',
-      column: 'title',
-      whereNot: {
-        // id: id > 0 ? id : null
-      }
+const postSchema = (exceptImage: boolean = false, id: number | null = null) => {
+  const ruleList: TypedSchema = {
+    title: schema.string({ trim: true }, [
+      rules.required(),
+      rules.minLength(5),
+      rules.maxLength(255),
+      rules.unique({
+        table: 'posts',
+        column: 'title',
+        whereNot: {
+          id: typeof id == 'number' ? id : null
+        }
+      })
+    ]),
+    description: schema.string({ trim: true }, [
+      rules.required(),
+      rules.minLength(5),
+      rules.maxLength(255)
+    ]),
+    content: schema.string({}, [
+      rules.required()
+    ]),
+    category: schema.number([
+      rules.required()
+    ])
+  }
+
+  if (!exceptImage)
+    ruleList.image = schema.file({
+      extnames: ['jpg', 'png', 'jpeg'],
     })
-  ]),
-  image: schema.file({
-    extnames: ['jpg', 'png', 'jpeg'],
-  }),
-  description: schema.string({ trim: true }, [
-    rules.required(),
-    rules.minLength(5),
-    rules.maxLength(255)
-  ]),
-  content: schema.string({}, [
-    rules.required()
-  ]),
-  category: schema.number([
-    rules.required()
-  ])
-})
+
+  return schema.create(ruleList)
+}
 
 export default class PostsController {
   public async index({ view }: HttpContextContract) {
@@ -58,7 +64,7 @@ export default class PostsController {
 
   public async store({ request, session, response }: HttpContextContract) {
     try {
-      await request.validate({ schema: postSchema })
+      await request.validate({ schema: postSchema() })
 
       const image: any = request.file('image')
       const fileName: string = `${cuid()}.${image?.extname}`
@@ -108,7 +114,7 @@ export default class PostsController {
       const categories: Category[] = await Category.all()
 
       return await view.render('pages/posts/edit', {
-        title: `Edit user of ${post.title} &#8212; ${Application.appName}`,
+        title: `Edit post of ${post.title} &#8212; ${Application.appName}`,
         post,
         categories
       })
@@ -119,8 +125,22 @@ export default class PostsController {
 
   public async update({ request, session, response, params }: HttpContextContract) {
     try {
-      await request.validate({ schema: postSchema })
+      const image = request.file('image')
+      const payload = await request.validate({ schema: postSchema(image ? false : true, parseInt(params.id)) })
 
+      const oldImagePath: string = await (await Post.firstOrFail(params.id)).image
+
+      // const 
+      return console.log(image, payload, oldImagePath)
+
+      const fileName: string = `${cuid()}.${image?.extname}`
+      const imagePath: string = '/upload/posts'
+      await image?.move(Application.publicPath(imagePath), {
+        name: fileName,
+        overwrite: true
+      })
+
+      return console.log(payload)
       const post: Post = await Post.findOrFail(params.id)
       await post.merge(request.only(['name', 'username', 'password', 'gender', 'address'])).save()
 
@@ -131,6 +151,7 @@ export default class PostsController {
       session.flash('error', 'Edit data failed')
       return response.redirect().toRoute('posts.edit', { id: params.id })
     } catch ({ messages }) {
+      return console.log(messages)
       const responses: { messages: Object, oldValue: Object } = {
         messages,
         oldValue: request.all()
